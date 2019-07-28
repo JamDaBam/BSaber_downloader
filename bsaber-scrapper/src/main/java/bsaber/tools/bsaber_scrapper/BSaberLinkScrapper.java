@@ -28,9 +28,7 @@ public class BSaberLinkScrapper {
 		BasicConfigurator.configure();
 
 		try {
-			System.out.println("Los gehts");
-			BSaberLinkScrapper bs = new BSaberLinkScrapper(2);
-			System.out.println("fertig");
+			BSaberLinkScrapper bs = new BSaberLinkScrapper(10);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -40,8 +38,13 @@ public class BSaberLinkScrapper {
 		List<BSaberEntry> bsaberEntries = new ArrayList<>();
 
 		for (int i = 1; i <= aAmountOfPages; i++) {
+			long start = System.currentTimeMillis();
 
-			Document doc = Jsoup.parse(new URL(i == 1 ? BSABER_BASE_URL : BSABER_URL + i), 10000);
+			String urlString = i == 1 ? BSABER_BASE_URL : BSABER_URL + i;
+			URL url = new URL(urlString);
+			cvLogger.debug("process " + urlString);
+
+			Document doc = Jsoup.parse(url, 10000);
 			Elements songEntries = doc.select("h4 > a");
 			Elements links = doc.select("a.-download-zip");
 
@@ -49,24 +52,19 @@ public class BSaberLinkScrapper {
 			Map<String, String> songIdToLink = new HashMap<>();
 
 			// Map songID to songname
-			cvLogger.debug("Song Entries");
 			for (Element element : songEntries) {
 				String href = element.attr("href");
 				if (href.contains(BSABER_BASE_URL)) {
 					String songId = href.replace(BSABER_BASE_URL, "").replace("/", "");
 					songIdToName.put(songId, element.text());
-					cvLogger.debug(songId + " --> " + element.text());
 				}
 			}
 
 			// Map songId to downloadlink
-			cvLogger.debug("Links");
 			for (Element linkElement : links) {
 				String link = linkElement.attr("href");
 				String songId = link.replace(BSABER_BASE_DOWNLOAD_URL, "").replace("/", "");
 				songIdToLink.put(songId, link);
-
-				cvLogger.debug(songId + " --> " + link);
 			}
 
 			for (Entry<String, String> songEntry : songIdToName.entrySet()) {
@@ -80,9 +78,13 @@ public class BSaberLinkScrapper {
 				}
 			}
 
+			long end = System.currentTimeMillis();
+			cvLogger.debug(end - start);
 		}
 
-		cvLogger.debug("\n\nBSaberEntries");
+		cvLogger.debug("");
+		cvLogger.debug("");
+		cvLogger.debug("BSaberEntries");
 		for (BSaberEntry bSaberEntry : bsaberEntries) {
 			cvLogger.debug(bSaberEntry.toString());
 		}
