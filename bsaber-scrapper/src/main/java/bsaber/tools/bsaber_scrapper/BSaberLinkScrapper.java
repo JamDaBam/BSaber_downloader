@@ -2,8 +2,11 @@ package bsaber.tools.bsaber_scrapper;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
@@ -26,7 +29,7 @@ public class BSaberLinkScrapper {
 
 		try {
 			System.out.println("Los gehts");
-			BSaberLinkScrapper bs = new BSaberLinkScrapper(1);
+			BSaberLinkScrapper bs = new BSaberLinkScrapper(2);
 			System.out.println("fertig");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -34,15 +37,18 @@ public class BSaberLinkScrapper {
 	}
 
 	public BSaberLinkScrapper(int aAmountOfPages) throws IOException {
+		List<BSaberEntry> bsaberEntries = new ArrayList<>();
+
 		for (int i = 1; i <= aAmountOfPages; i++) {
 
-			Document doc = Jsoup.parse(new URL(i == 1 ? BSABER_BASE_URL : BSABER_URL + i), 5000);
+			Document doc = Jsoup.parse(new URL(i == 1 ? BSABER_BASE_URL : BSABER_URL + i), 10000);
 			Elements songEntries = doc.select("h4 > a");
 			Elements links = doc.select("a.-download-zip");
 
 			Map<String, String> songIdToName = new HashMap<>();
 			Map<String, String> songIdToLink = new HashMap<>();
 
+			// Map songID to songname
 			cvLogger.debug("Song Entries");
 			for (Element element : songEntries) {
 				String href = element.attr("href");
@@ -53,6 +59,7 @@ public class BSaberLinkScrapper {
 				}
 			}
 
+			// Map songId to downloadlink
 			cvLogger.debug("Links");
 			for (Element linkElement : links) {
 				String link = linkElement.attr("href");
@@ -62,7 +69,23 @@ public class BSaberLinkScrapper {
 				cvLogger.debug(songId + " --> " + link);
 			}
 
-			cvLogger.debug(songIdToName.size() + " - " + songIdToLink.size());
+			for (Entry<String, String> songEntry : songIdToName.entrySet()) {
+				String songId = songEntry.getKey();
+
+				String downloadLink = songIdToLink.get(songId);
+				if (downloadLink != null) {
+					String songName = songEntry.getValue();
+
+					bsaberEntries.add(new BSaberEntry(songId, songName, downloadLink));
+				}
+			}
+
 		}
+
+		cvLogger.debug("\n\nBSaberEntries");
+		for (BSaberEntry bSaberEntry : bsaberEntries) {
+			cvLogger.debug(bSaberEntry.toString());
+		}
+		cvLogger.debug("Scrapped " + bsaberEntries.size() + " entries");
 	}
 }
