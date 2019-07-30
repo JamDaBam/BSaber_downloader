@@ -34,7 +34,8 @@ public class BSaberEntry {
 	}
 
 	private String getDownloadName() {
-		return getSongID() + " (" + getName() + ").zip";
+		String name = getName().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+		return getSongID() + " (" + name + ").zip";
 	}
 
 	public void download() {
@@ -44,7 +45,7 @@ public class BSaberEntry {
 				FileUtils.copyURLToFile(new URL(getDownloadUrl()), downloadFile);
 				cvLogger.debug("DONE " + getDownloadName());
 			} else {
-				cvLogger.debug("bereits vorhanden " + downloadFile.getPath());
+				cvLogger.debug("SKIP " + downloadFile.getPath());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -53,6 +54,6 @@ public class BSaberEntry {
 
 	@Override
 	public String toString() {
-		return ivSongID + " --> " + ivName + " (" + ivDownloadUrl + ")";
+		return getSongID() + " --> " + getName() + " (" + getDownloadUrl() + ")";
 	}
 }
