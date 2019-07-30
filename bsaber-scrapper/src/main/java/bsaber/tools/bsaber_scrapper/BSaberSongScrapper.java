@@ -32,8 +32,8 @@ public class BSaberSongScrapper {
 			long start = System.currentTimeMillis();
 			List<BSaberEntry> bsaberEntries = BSaberSongScrapper.scrapePages(780);
 			long end = System.currentTimeMillis();
-			cvLogger.debug("DONE (" + (end - start) + ")");
 			bsaberEntries.parallelStream().forEach(BSaberEntry::download);
+			cvLogger.debug("DONE (" + (end - start) + ")");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -51,9 +51,9 @@ public class BSaberSongScrapper {
 			URL url;
 			try {
 				url = new URL(urlString);
-				cvLogger.debug("process " + urlString);
+				cvLogger.debug("PROCESS " + urlString);
 
-				Document doc = Jsoup.parse(url, 10000);
+				Document doc = Jsoup.parse(url, 30000);
 				Elements songEntries = doc.select("h4 > a");
 				Elements links = doc.select("a.-download-zip");
 
@@ -74,15 +74,12 @@ public class BSaberSongScrapper {
 				}
 
 				long end = System.currentTimeMillis();
-				cvLogger.debug("done " + urlString + " (" + (end - start) + ")");
+				cvLogger.debug("DONE " + urlString + " (" + (end - start) + ")");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		});
 
-		cvLogger.debug("");
-		cvLogger.debug("");
-		cvLogger.debug("BSaberEntries");
 		for (Entry<String, String> songEntry : songIdToName.entrySet()) {
 			String songId = songEntry.getKey();
 
@@ -94,9 +91,6 @@ public class BSaberSongScrapper {
 			}
 		}
 
-		for (BSaberEntry bSaberEntry : bsaberEntries) {
-			cvLogger.debug(bSaberEntry.toString());
-		}
 		cvLogger.debug("Scrapped " + bsaberEntries.size() + " entries");
 
 		return bsaberEntries;
