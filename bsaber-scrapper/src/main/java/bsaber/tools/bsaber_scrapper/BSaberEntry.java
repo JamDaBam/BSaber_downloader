@@ -1,6 +1,16 @@
 package bsaber.tools.bsaber_scrapper;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 public class BSaberEntry {
+	private static Logger cvLogger = LogManager.getLogger(BSaberEntry.class);
+
 	private String ivSongID;
 	private String ivName;
 	private String ivDownloadUrl;
@@ -23,9 +33,22 @@ public class BSaberEntry {
 		return ivDownloadUrl;
 	}
 
-	public String getFolderName() {
-		// TODO
-		return "";
+	private String getDownloadName() {
+		return getSongID() + " (" + getName() + ").zip";
+	}
+
+	public void download() {
+		File downloadFile = new File("Z:\\BSaberSongs\\" + getDownloadName());
+		try {
+			if (!downloadFile.exists()) {
+				FileUtils.copyURLToFile(new URL(getDownloadUrl()), downloadFile);
+				cvLogger.debug("DONE " + getDownloadName());
+			} else {
+				cvLogger.debug("bereits vorhanden " + downloadFile.getPath());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
