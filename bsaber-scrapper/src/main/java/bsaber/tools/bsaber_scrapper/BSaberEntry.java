@@ -9,7 +9,11 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 public class BSaberEntry {
+	private static final String DOWNLOAD_PATH = "Z:\\BSaberSongs\\";
+	
 	private static Logger cvLogger = LogManager.getLogger(BSaberEntry.class);
+	private static int cvDownloadedTotal = 0;
+	
 
 	private String ivSongID;
 	private String ivName;
@@ -33,23 +37,34 @@ public class BSaberEntry {
 		return ivDownloadUrl;
 	}
 
+	public static int getDownloadedTotal() {
+		return cvDownloadedTotal;
+	}
+	
 	private String getDownloadName() {
 		String name = getName().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
 		return getSongID() + " (" + name + ").zip";
 	}
 
-	public void download() {
-		File downloadFile = new File("Z:\\BSaberSongs\\" + getDownloadName());
+	public boolean download() {
+		File downloadFile = new File(DOWNLOAD_PATH + getDownloadName());
 		try {
 			if (!downloadFile.exists()) {
-				FileUtils.copyURLToFile(new URL(getDownloadUrl()), downloadFile);
-				cvLogger.debug("DONE " + getDownloadName());
+				URL url = new URL(getDownloadUrl());
+				FileUtils.copyURLToFile(url, downloadFile);
+
+				cvDownloadedTotal++;
+
+				return true;
 			} else {
-				cvLogger.debug("SKIP " + downloadFile.getPath());
+				cvDownloadedTotal++;
+
+				return true;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 		}
+
+		return false;
 	}
 
 	@Override
