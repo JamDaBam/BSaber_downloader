@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import org.apache.log4j.BasicConfigurator;
@@ -34,16 +35,14 @@ public class BSaberSongScrapper {
 	private static final int CORE_SIZE = 3;
 	private static final ThreadPoolExecutor EXECUTOR = (ThreadPoolExecutor) Executors.newFixedThreadPool(CORE_SIZE);
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		BasicConfigurator.configure();
 
-		try {
-			downloadPages(0, 770);
-			cvLogger.debug("DONE " + EXECUTOR.getTaskCount() + " tasks");
+		downloadPages(0, 70);
+		cvLogger.debug("DONE " + EXECUTOR.getTaskCount() + " tasks");
 
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
+		EXECUTOR.shutdown();
+		EXECUTOR.awaitTermination(10, TimeUnit.DAYS);
 	}
 
 	private static void downloadPages(int aFrom, int aTo) throws IOException, InterruptedException {
@@ -117,8 +116,9 @@ public class BSaberSongScrapper {
 				}
 
 				long end = System.currentTimeMillis();
-				cvLogger.debug("DONE " + urlString + " --> " + downloaded + " / " + BSaberEntry.getDownloadedTotal()
-						+ " (" + (end - start) + ")");
+				cvLogger.debug("DONE " + urlString + " --> " + downloaded + " / " + "( " + BSaberEntry.getNewDownloads()
+						+ "/" + BSaberEntry.getAlreadyDownloads() + "/" + BSaberEntry.getDownloadedTotal() + " )" + " ("
+						+ (end - start) + ")");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
