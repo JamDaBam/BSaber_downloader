@@ -3,19 +3,24 @@ package bsaber.tools.bsaber_scrapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 public class BSaberEntry {
-	private static Logger cvLogger = LogManager.getLogger(BSaberEntry.class);
+	private static final Logger cvLogger = LogManager.getLogger(BSaberEntry.class);
 
 	private static final String DOWNLOAD_PATH = "Z:\\BSaberSongs\\";
+	private static final String ILLEGAL_CHARACTERS = "[^a-zA-Z0-9\\.\\-]";
 
 	private static int cvNewDownloads = 0;
 	private static int cvAlreadyDownloads = 0;
 	private static int cvDownloadedTotal = 0;
+	private static List<BSaberEntry> cvNewSongs = new ArrayList<>();
+	private static List<BSaberEntry> cvSongsWithErrors = new ArrayList<>();
 
 	private String ivSongID;
 	private String ivName;
@@ -60,8 +65,38 @@ public class BSaberEntry {
 		return cvDownloadedTotal;
 	}
 
+	public static List<BSaberEntry> getNewSongs() {
+		return cvNewSongs;
+	}
+
+	public static List<BSaberEntry> getSongsWithErrors() {
+		return cvSongsWithErrors;
+	}
+
+	public static void printNewSongs() {
+
+		if (!getNewSongs().isEmpty()) {
+			cvLogger.debug("NEW SONGS:");
+			for (BSaberEntry bSaberEntry : getNewSongs()) {
+				cvLogger.debug(bSaberEntry.toString());
+			}
+			cvLogger.debug("");
+		}
+	}
+
+	public static void printSongsWithErrors() {
+
+		if (!getSongsWithErrors().isEmpty()) {
+			cvLogger.debug("SONGS WITH ERRORS");
+			for (BSaberEntry bSaberEntry : getSongsWithErrors()) {
+				cvLogger.debug(bSaberEntry.toString());
+			}
+			cvLogger.debug("");
+		}
+	}
+
 	private String getDownloadName() {
-		String name = getName().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+		String name = getName().replaceAll(ILLEGAL_CHARACTERS, "_");
 		return getSongID() + " (" + name + ").zip";
 	}
 
@@ -76,6 +111,8 @@ public class BSaberEntry {
 				cvDownloadedTotal++;
 				downloadFinish();
 
+				cvNewSongs.add(this);
+
 				return isDownloaded();
 			} else {
 				cvAlreadyDownloads++;
@@ -85,6 +122,8 @@ public class BSaberEntry {
 				return isDownloaded();
 			}
 		} catch (IOException e) {
+			e.printStackTrace();
+			cvSongsWithErrors.add(this);
 		}
 
 		return isDownloaded();

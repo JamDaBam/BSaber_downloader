@@ -22,12 +22,13 @@ import org.jsoup.select.Elements;
 
 public class BSaberSongScrapper {
 
-	private static Logger cvLogger = LogManager.getLogger(BSaberSongScrapper.class);
+	private static final Logger cvLogger = LogManager.getLogger(BSaberSongScrapper.class);
 
-	private static final String BSABER_BASE_URL = "https://bsaber.com/songs/";
+	private static final String BSABER_BASE_SONGS_URL = "https://bsaber.com/songs/";
 	private static final String BSABER_BASE_DOWNLOAD_URL = "https://beatsaver.com/api/download/key/";
-	private static final String BSABER_URL = "https://bsaber.com/songs/page/";
+	private static final String BSABER_SONGS_PAGE_URL = "https://bsaber.com/songs/page/";
 
+	private static final String QUERY_SONG_ENTRY = "header.post-title > h1";
 	private static final String QUERY_SONG_ENTRIES = "h4 > a";
 	private static final String QUERY_LINKS = "a.-download-zip";
 	private static final String TAG_LINK = "href";
@@ -38,11 +39,12 @@ public class BSaberSongScrapper {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		BasicConfigurator.configure();
 
-		downloadPages(0, 70);
-		cvLogger.debug("DONE " + EXECUTOR.getTaskCount() + " tasks");
+		downloadPages(0, 5);
 
 		EXECUTOR.shutdown();
 		EXECUTOR.awaitTermination(10, TimeUnit.DAYS);
+		BSaberEntry.printNewSongs();
+		BSaberEntry.printSongsWithErrors();
 	}
 
 	private static void downloadPages(int aFrom, int aTo) throws IOException, InterruptedException {
@@ -65,7 +67,7 @@ public class BSaberSongScrapper {
 			Map<String, String> songIdToName = new HashMap<>();
 			Map<String, String> songIdToLink = new HashMap<>();
 
-			String urlString = aPageNumber == 1 ? BSABER_BASE_URL : BSABER_URL + aPageNumber;
+			String urlString = aPageNumber == 1 ? BSABER_BASE_SONGS_URL : BSABER_SONGS_PAGE_URL + aPageNumber;
 
 			URL url;
 			try {
@@ -79,8 +81,8 @@ public class BSaberSongScrapper {
 				// Map songID to songname
 				for (Element element : songEntries) {
 					String link = element.attr(TAG_LINK);
-					if (link.contains(BSABER_BASE_URL)) {
-						String songId = extractID(link, BSABER_BASE_URL);
+					if (link.contains(BSABER_BASE_SONGS_URL)) {
+						String songId = extractID(link, BSABER_BASE_SONGS_URL);
 						songIdToName.put(songId, element.text());
 					}
 				}
@@ -94,18 +96,7 @@ public class BSaberSongScrapper {
 
 				int downloaded = 0;
 
-				List<BSaberEntry> downloadEntries = new ArrayList<>();
-
-				for (Entry<String, String> songEntry : songIdToName.entrySet()) {
-					String songId = songEntry.getKey();
-
-					String downloadLink = songIdToLink.get(songId);
-					if (downloadLink != null) {
-						String songName = songEntry.getValue();
-
-						downloadEntries.add(new BSaberEntry(songId, songName, downloadLink));
-					}
-				}
+				List<BSaberEntry> downloadEntries = getBSaberEntries(songIdToName, songIdToLink);
 
 				cvLogger.debug(urlString + " downloadEntries --> " + downloadEntries.size());
 
@@ -123,6 +114,82 @@ public class BSaberSongScrapper {
 				e.printStackTrace();
 			}
 		});
+	}
+
+	private static void downloadSongs(String... aSongIDs) {
+		if (aSongIDs != null) {
+			for (String aSongID : aSongIDs) {
+				downloadSong(aSongID);
+			}
+		}
+	}
+
+	private static void downloadSong(String aSongID) {
+		EXECUTOR.submit(() -> {
+			long start = System.currentTimeMillis();
+
+			Map<String, String> songIdToName = new HashMap<>();
+			Map<String, String> songIdToLink = new HashMap<>();
+
+			String urlString = BSABER_BASE_SONGS_URL + aSongID;
+
+			URL url;
+			try {
+
+				url = new URL(urlString);
+
+				Document doc = Jsoup.parse(url, 30000);
+				Elements songEntries = doc.select(QUERY_SONG_ENTRY);
+				Elements links = doc.select(QUERY_LINKS);
+
+				// Map songID to songname
+				for (Element element : songEntries) {
+					songIdToName.put(aSongID, element.text());
+				}
+
+				// Map songId to downloadlink
+				for (Element element : links) {
+					String link = element.attr(TAG_LINK);
+					String songId = extractID(link, BSABER_BASE_DOWNLOAD_URL);
+					songIdToLink.put(songId, link);
+				}
+
+				int downloaded = 0;
+				List<BSaberEntry> downloadEntries = getBSaberEntries(songIdToName, songIdToLink);
+				cvLogger.debug(urlString + " downloadEntries --> " + downloadEntries.size());
+
+				for (BSaberEntry bSaberEntry : downloadEntries) {
+					if (bSaberEntry.download()) {
+						downloaded++;
+					}
+				}
+
+				long end = System.currentTimeMillis();
+				cvLogger.debug("DONE " + urlString + " --> " + downloaded + " / " + "( " + BSaberEntry.getNewDownloads()
+						+ "/" + BSaberEntry.getAlreadyDownloads() + "/" + BSaberEntry.getDownloadedTotal() + " )" + " ("
+						+ (end - start) + ")");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+
+	}
+
+	private static List<BSaberEntry> getBSaberEntries(Map<String, String> songIdToName,
+			Map<String, String> songIdToLink) {
+		List<BSaberEntry> downloadEntries = new ArrayList<>();
+
+		for (Entry<String, String> songEntry : songIdToName.entrySet()) {
+			String songId = songEntry.getKey();
+
+			String downloadLink = songIdToLink.get(songId);
+			if (downloadLink != null) {
+				String songName = songEntry.getValue();
+
+				downloadEntries.add(new BSaberEntry(songId, songName, downloadLink));
+			}
+		}
+		return downloadEntries;
 	}
 
 	private static String extractID(String aHref, String aCutString) {
