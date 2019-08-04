@@ -89,7 +89,7 @@ public class BSaberSongScrapper {
 			String[] songIds = cmd.getOptionValues(BSaberScrapperConstants.PARAMETER_SONGID);
 			downloadSongs(path, songIds);
 		} else {
-			throw new IllegalArgumentException("Tow many parameters set " + Arrays.deepToString(args));
+			throw new IllegalArgumentException("False parameters " + Arrays.deepToString(args));
 		}
 
 		EXECUTOR.shutdown();
@@ -297,7 +297,7 @@ public class BSaberSongScrapper {
 
 		Option optionPath = new Option(BSaberScrapperConstants.PARAMETER_PATH, true,
 				"Defines the downloadfolder. If not set an absolute path then the tool creates the downloadfolder beside the executionpath.");
-		optionPath.setArgName("DOWNLOADPATH");
+		optionPath.setArgName("DOWNLOADPATH [REQUIRED]");
 		optionPath.setOptionalArg(false);
 		options.addOption(optionPath);
 
