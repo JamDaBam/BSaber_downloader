@@ -8,3 +8,8 @@
 
 ## Download a specific songs
 -path [SAVEPATH] -songid [ SONGID_1 SONGID_n ]
+
+
+# Planned features
+* Download newest songs of mapper/s
+* Mapper and difficulty in filename
