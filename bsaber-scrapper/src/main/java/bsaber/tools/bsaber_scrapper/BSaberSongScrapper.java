@@ -13,6 +13,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -21,170 +29,108 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+//TODO Das muss refactored werden
 public class BSaberSongScrapper {
 
 	private static final Logger cvLogger = LogManager.getLogger(BSaberSongScrapper.class);
 
-	private static final String PARAMETER_HELP = "-h";
-	private static final String PARAMETER_PAGEFROM = "-pagefrom";
-	private static final String PARAMETER_PAGETO = "-pageto";
-	private static final String PARAMETER_PAGE = "-page";
-	private static final String PARAMETER_SONGID = "-songid";
-	private static final String PARAMETER_PATH = "-path";
+	private static final ThreadPoolExecutor EXECUTOR = (ThreadPoolExecutor) Executors
+			.newFixedThreadPool(BSaberScrapperConstants.CORE_SIZE);
 
-	private static final String BSABER_BASE_SONGS_URL = "https://bsaber.com/songs/";
-	private static final String BSABER_BASE_DOWNLOAD_URL = "https://beatsaver.com/api/download/key/";
-	private static final String BSABER_SONGS_PAGE_URL = "https://bsaber.com/songs/page/";
-
-	private static final String QUERY_SONG_ENTRY = "header.post-title > h1";
-	private static final String QUERY_SONG_ENTRIES = "h4 > a";
-	private static final String QUERY_LINKS = "a.-download-zip";
-	private static final String TAG_LINK = "href";
-
-	private static final int CORE_SIZE = 3;
-	private static final ThreadPoolExecutor EXECUTOR = (ThreadPoolExecutor) Executors.newFixedThreadPool(CORE_SIZE);
-
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void main(String[] args) throws IOException, InterruptedException, ParseException {
 		BasicConfigurator.configure();
 
-		// TODO Find better solution to check parameters
-		// Checking parameters
-		int argsLength = args.length;
-		if (argsLength > 0) {
-			if (PARAMETER_HELP.equalsIgnoreCase(args[0])) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("Download a range of pages:\t" + PARAMETER_PATH + " [SAVEPATH] " + PARAMETER_PAGEFROM
-						+ " [ > 0] " + PARAMETER_PAGETO + " [ <= pagefrom]\n");
-				sb.append("Download a page:\t\t" + PARAMETER_PATH + " [SAVEPATH] " + PARAMETER_PAGE + " [ > 0 ]\n");
-				sb.append("Download a specific songs:\t" + PARAMETER_PATH + " [SAVEPATH] " + PARAMETER_SONGID + " [ SONGID_1 SONGID_n ]\n");
-				System.out.println(sb.toString());
-			} else if (!PARAMETER_SONGID.equalsIgnoreCase(args[2]) && argsLength > 6) {
-				throw new IllegalArgumentException("To many parameters set");
-			} else if (argsLength == 6 && !PARAMETER_SONGID.equalsIgnoreCase(args[2])) {
-				Integer pageFrom = null;
-				Integer pageTo = null;
-				String path = null;
+		Options options = generateOptions();
 
-				// Checking and get path parameter
-				String pathParameter = args[0];
-				if (PARAMETER_PATH.equalsIgnoreCase(pathParameter)) {
-					path = checkPath(args[1]);
-				} else {
-					throw new IllegalArgumentException("First parameter should be -path");
-				}
+		CommandLineParser parser = new DefaultParser();
+		CommandLine cmd = parser.parse(options, args);
 
-				// Checking and get pagefrom parameter
-				String pageFromParameter = args[2];
-				if (PARAMETER_PAGEFROM.equalsIgnoreCase(pageFromParameter)) {
-					pageFrom = Integer.parseInt(args[3]);
-				} else {
-					throw new IllegalArgumentException("Second parameter should be -pagefrom");
-				}
+		// Process help
+		if (isHelpOption(cmd)) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("Parameters", options);
+			System.exit(1);
+		}
 
-				// Checking and get pageto parameter
-				String pageToParameter = args[4];
-				if (PARAMETER_PAGETO.equalsIgnoreCase(pageToParameter)) {
-					pageTo = Integer.parseInt(args[5]);
-				} else {
-					throw new IllegalArgumentException("Third parameter should be -pageto");
-				}
+		// Process path
+		String path;
+		if (isPathOption(cmd)) {
+			path = checkPath(cmd.getOptionValue(BSaberScrapperConstants.PARAMETER_PATH));
+		} else {
+			throw new MissingOptionException("Missing required option: " + BSaberScrapperConstants.PARAMETER_PATH);
+		}
 
-				cvLogger.debug("path=" + path + " from=" + pageFrom + " to=" + pageTo);
-				downloadPages(pageFrom, pageTo, path);
+		// Process range of pages
+		if (isPageRangeOption(cmd)) {
+			String[] pageRange = cmd.getOptionValues(BSaberScrapperConstants.PARAMETER_PAGERANGE);
 
-			} else if (argsLength == 4) {
-				Integer page = null;
-				String songId = null;
-				String path = null;
+			Integer pageStart = null;
+			Integer pageEnd = null;
 
-				// Checking and get path parameter
-				String pathParameter = args[0];
-				if (PARAMETER_PATH.equalsIgnoreCase(pathParameter)) {
-					path = checkPath(args[1]);
-				} else {
-					throw new IllegalArgumentException("First parameter should be -path");
-				}
+			pageStart = Integer.parseInt(pageRange[0]);
+			pageEnd = Integer.parseInt(pageRange[1]);
 
-				// Checking and get pagefrom parameter
-				String secondParameter = args[2];
-				if (PARAMETER_PAGE.equalsIgnoreCase(secondParameter)) {
-					page = Integer.parseInt(args[3]);
-				} else if (PARAMETER_SONGID.equalsIgnoreCase(secondParameter)) {
-					songId = args[3];
-				} else {
-					throw new IllegalArgumentException("Second parameter should be -page or -songid");
-				}
+			downloadPages(path, pageStart, pageEnd);
+		}
+		// Process pages
+		else if (isPageOption(cmd)) {
+			String[] pageNumbersString = cmd.getOptionValues(BSaberScrapperConstants.PARAMETER_PAGE);
+			int pageNumbersLength = pageNumbersString.length;
+			int[] pageNumbersInt = new int[pageNumbersLength];
 
-				if (page == null) {
-					cvLogger.debug("path=" + path + " songid=" + songId);
-					downloadSong(songId, path);
-				} else {
-					cvLogger.debug("path=" + path + " page=" + page);
-					downloadPage(page, path);
-				}
-			} else if (argsLength > 4 && PARAMETER_SONGID.equalsIgnoreCase(args[2])) {
-				String[] songIds = new String[argsLength - 3];
-				String path = null;
-
-				// Checking and get path parameter
-				String pathParameter = args[0];
-				if (PARAMETER_PATH.equalsIgnoreCase(pathParameter)) {
-					path = checkPath(args[1]);
-				} else {
-					throw new IllegalArgumentException("First parameter should be -path");
-				}
-
-				int songIdStart = 3;
-
-				// Checking and get path parameter
-				for (int i = songIdStart; i < argsLength; i++) {
-					String songId = args[i];
-
-					if (songId.contains("-")) {
-						throw new IllegalArgumentException("False parameters");
-					} else {
-						songIds[i - songIdStart] = songId;
-					}
-				}
-
-				cvLogger.debug("path=" + path + " songid=" + Arrays.deepToString(songIds));
-				downloadSongs(path, songIds);
-
-			} else {
-				throw new IllegalArgumentException("False parameters");
+			for (int i = 0; i < pageNumbersLength; i++) {
+				pageNumbersInt[i] = Integer.parseInt(pageNumbersString[i]);
 			}
+
+			downloadPages(path, pageNumbersInt);
+		}
+		// Procces songids
+		else if (isSongIdOption(cmd)) {
+			String[] songIds = cmd.getOptionValues(BSaberScrapperConstants.PARAMETER_SONGID);
+			downloadSongs(path, songIds);
+		} else {
+			throw new IllegalArgumentException("Tow many parameters set " + Arrays.deepToString(args));
 		}
 
 		EXECUTOR.shutdown();
 		EXECUTOR.awaitTermination(10, TimeUnit.DAYS);
 		BSaberEntry.printNewSongs();
 		BSaberEntry.printSongsWithErrors();
+		System.exit(1);
 	}
 
-	private static void downloadPages(int aFrom, int aTo, String aPath) throws IOException, InterruptedException {
-		if (aFrom == 0) {
+	public static void downloadPages(String aPath, int aPageStart, int aPageEnd)
+			throws IOException, InterruptedException {
+		if (aPageStart == 0) {
 			throw new IllegalArgumentException("aFrom has to be greater than 0");
 		}
-		if (aFrom > aTo) {
-			throw new IllegalArgumentException("aFrom <= aTo ----- " + aFrom + " <= " + aTo);
+		if (aPageStart > aPageEnd) {
+			throw new IllegalArgumentException("aFrom <= aTo ----- " + aPageStart + " <= " + aPageEnd);
 		}
 
-		int maxPoolSize = aTo - aFrom + CORE_SIZE;
+		int maxPoolSize = aPageEnd - aPageStart + BSaberScrapperConstants.CORE_SIZE;
 		EXECUTOR.setMaximumPoolSize(maxPoolSize);
 
-		IntStream.range(aFrom, aTo + 1).forEach(aInt -> {
-			downloadPage(aInt, aPath);
+		IntStream.range(aPageStart, aPageEnd + 1).forEach(aPageNumber -> {
+			downloadPage(aPath, aPageNumber);
 		});
 	}
 
-	private static void downloadPage(int aPageNumber, String aPath) {
+	public static void downloadPages(String aPath, int... aPageNumbers) {
+		for (int pageNumber : aPageNumbers) {
+			downloadPage(aPath, pageNumber);
+		}
+	}
+
+	public static void downloadPage(String aPath, int aPageNumber) {
 		EXECUTOR.submit(() -> {
 			long start = System.currentTimeMillis();
 
 			Map<String, String> songIdToName = new HashMap<>();
 			Map<String, String> songIdToLink = new HashMap<>();
 
-			String urlString = aPageNumber == 1 ? BSABER_BASE_SONGS_URL : BSABER_SONGS_PAGE_URL + aPageNumber;
+			String urlString = aPageNumber == 1 ? BSaberScrapperConstants.BSABER_BASE_SONGS_URL
+					: BSaberScrapperConstants.BSABER_SONGS_PAGE_URL + aPageNumber;
 
 			URL url;
 			try {
@@ -192,22 +138,22 @@ public class BSaberSongScrapper {
 				url = new URL(urlString);
 
 				Document doc = Jsoup.parse(url, 30000);
-				Elements songEntries = doc.select(QUERY_SONG_ENTRIES);
-				Elements links = doc.select(QUERY_LINKS);
+				Elements songEntries = doc.select(BSaberScrapperConstants.QUERY_SONG_ENTRIES);
+				Elements links = doc.select(BSaberScrapperConstants.QUERY_LINKS);
 
 				// Map songID to songname
 				for (Element element : songEntries) {
-					String link = element.attr(TAG_LINK);
-					if (link.contains(BSABER_BASE_SONGS_URL)) {
-						String songId = extractID(link, BSABER_BASE_SONGS_URL);
+					String link = element.attr(BSaberScrapperConstants.TAG_LINK);
+					if (link.contains(BSaberScrapperConstants.BSABER_BASE_SONGS_URL)) {
+						String songId = extractID(link, BSaberScrapperConstants.BSABER_BASE_SONGS_URL);
 						songIdToName.put(songId, element.text());
 					}
 				}
 
 				// Map songId to downloadlink
 				for (Element element : links) {
-					String link = element.attr(TAG_LINK);
-					String songId = extractID(link, BSABER_BASE_DOWNLOAD_URL);
+					String link = element.attr(BSaberScrapperConstants.TAG_LINK);
+					String songId = extractID(link, BSaberScrapperConstants.BSABER_BASE_DOWNLOAD_URL);
 					songIdToLink.put(songId, link);
 				}
 
@@ -233,22 +179,22 @@ public class BSaberSongScrapper {
 		});
 	}
 
-	private static void downloadSongs(String aPath, String... aSongIDs) {
+	public static void downloadSongs(String aPath, String... aSongIDs) {
 		if (aSongIDs != null) {
 			for (String aSongID : aSongIDs) {
-				downloadSong(aSongID, aPath);
+				downloadSong(aPath, aSongID);
 			}
 		}
 	}
 
-	private static void downloadSong(String aSongID, String aPath) {
+	private static void downloadSong(String aPath, String aSongID) {
 		EXECUTOR.submit(() -> {
 			long start = System.currentTimeMillis();
 
 			Map<String, String> songIdToName = new HashMap<>();
 			Map<String, String> songIdToLink = new HashMap<>();
 
-			String urlString = BSABER_BASE_SONGS_URL + aSongID;
+			String urlString = BSaberScrapperConstants.BSABER_BASE_SONGS_URL + aSongID;
 
 			URL url;
 			try {
@@ -256,8 +202,8 @@ public class BSaberSongScrapper {
 				url = new URL(urlString);
 
 				Document doc = Jsoup.parse(url, 30000);
-				Elements songEntries = doc.select(QUERY_SONG_ENTRY);
-				Elements links = doc.select(QUERY_LINKS);
+				Elements songEntries = doc.select(BSaberScrapperConstants.QUERY_SONG_ENTRY);
+				Elements links = doc.select(BSaberScrapperConstants.QUERY_LINKS);
 
 				// Map songID to songname
 				for (Element element : songEntries) {
@@ -266,8 +212,8 @@ public class BSaberSongScrapper {
 
 				// Map songId to downloadlink
 				for (Element element : links) {
-					String link = element.attr(TAG_LINK);
-					String songId = extractID(link, BSABER_BASE_DOWNLOAD_URL);
+					String link = element.attr(BSaberScrapperConstants.TAG_LINK);
+					String songId = extractID(link, BSaberScrapperConstants.BSABER_BASE_DOWNLOAD_URL);
 					songIdToLink.put(songId, link);
 				}
 
@@ -290,6 +236,10 @@ public class BSaberSongScrapper {
 			}
 		});
 
+	}
+
+	private static String extractID(String aHref, String aCutString) {
+		return aHref.replace(aCutString, "").replace("/", "");
 	}
 
 	private static List<BSaberEntry> getBSaberEntries(Map<String, String> songIdToName,
@@ -309,10 +259,6 @@ public class BSaberSongScrapper {
 		return downloadEntries;
 	}
 
-	private static String extractID(String aHref, String aCutString) {
-		return aHref.replace(aCutString, "").replace("/", "");
-	}
-
 	private static String checkPath(String aPath) {
 		String path = aPath;
 
@@ -324,4 +270,93 @@ public class BSaberSongScrapper {
 		return path;
 	}
 
+	private static Options generateOptions() {
+		Options options = new Options();
+
+		Option optionHelp = new Option(BSaberScrapperConstants.PARAMETER_HELP, false, "Help");
+		options.addOption(optionHelp);
+
+		Option optionPageRange = new Option(BSaberScrapperConstants.PARAMETER_PAGERANGE, true,
+				"Defines a range of pages. The startpage must be greater than zero and less than or equal to endpage.");
+		optionPageRange.setOptionalArg(false);
+		optionPageRange.setArgs(2);
+		optionPageRange.setArgName("PAGESTART PAGEEND");
+		options.addOption(optionPageRange);
+
+		Option optionPage = new Option(BSaberScrapperConstants.PARAMETER_PAGE, true, "Defines pages to download.");
+		optionPage.setArgs(Option.UNLIMITED_VALUES);
+		optionPage.setArgName("PAGENUMBERS");
+		optionPage.setOptionalArg(false);
+		options.addOption(optionPage);
+
+		Option optionSongId = new Option(BSaberScrapperConstants.PARAMETER_SONGID, true, "Defines songids to download");
+		optionSongId.setArgs(Option.UNLIMITED_VALUES);
+		optionSongId.setArgName("SONGIDS");
+		optionSongId.setOptionalArg(false);
+		options.addOption(optionSongId);
+
+		Option optionPath = new Option(BSaberScrapperConstants.PARAMETER_PATH, true,
+				"Defines the downloadfolder. If not set an absolute path then the tool creates the downloadfolder beside the executionpath.");
+		optionPath.setArgName("DOWNLOADPATH");
+		optionPath.setOptionalArg(false);
+		options.addOption(optionPath);
+
+		return options;
+	}
+
+	private static boolean hasOption(CommandLine aCmd, String... aOptions) {
+		boolean res = true;
+
+		for (String option : aOptions) {
+			if (res) {
+				res = aCmd.hasOption(option);
+			} else {
+				break;
+			}
+		}
+
+		return res;
+	}
+
+	private static boolean hasNotOption(CommandLine aCmd, String... aOptions) {
+		boolean res = true;
+
+		for (String option : aOptions) {
+			if (res) {
+				res = !aCmd.hasOption(option);
+			} else {
+				break;
+			}
+		}
+
+		return res;
+	}
+
+	private static boolean isSongIdOption(CommandLine cmd) {
+		return hasOption(cmd, BSaberScrapperConstants.PARAMETER_SONGID)
+				&& hasNotOption(cmd, BSaberScrapperConstants.PARAMETER_PAGE,
+						BSaberScrapperConstants.PARAMETER_PAGERANGE, BSaberScrapperConstants.PARAMETER_HELP);
+	}
+
+	private static boolean isPageOption(CommandLine cmd) {
+		return hasOption(cmd, BSaberScrapperConstants.PARAMETER_PAGE)
+				&& hasNotOption(cmd, BSaberScrapperConstants.PARAMETER_PAGERANGE,
+						BSaberScrapperConstants.PARAMETER_SONGID, BSaberScrapperConstants.PARAMETER_HELP);
+	}
+
+	private static boolean isPageRangeOption(CommandLine cmd) {
+		return hasOption(cmd, BSaberScrapperConstants.PARAMETER_PAGERANGE)
+				&& hasNotOption(cmd, BSaberScrapperConstants.PARAMETER_PAGE, BSaberScrapperConstants.PARAMETER_SONGID,
+						BSaberScrapperConstants.PARAMETER_HELP);
+	}
+
+	private static boolean isPathOption(CommandLine cmd) {
+		return cmd.hasOption(BSaberScrapperConstants.PARAMETER_PATH);
+	}
+
+	private static boolean isHelpOption(CommandLine cmd) {
+		return hasOption(cmd, BSaberScrapperConstants.PARAMETER_HELP) && hasNotOption(cmd,
+				BSaberScrapperConstants.PARAMETER_PAGE, BSaberScrapperConstants.PARAMETER_PAGERANGE,
+				BSaberScrapperConstants.PARAMETER_PATH, BSaberScrapperConstants.PARAMETER_SONGID);
+	}
 }
