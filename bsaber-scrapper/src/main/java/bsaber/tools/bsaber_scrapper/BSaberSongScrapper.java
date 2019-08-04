@@ -46,7 +46,7 @@ public class BSaberSongScrapper {
 		CommandLine cmd = parser.parse(options, args);
 
 		// Process help
-		if (isHelpOption(cmd)) {
+		if (args.length == 0 || isHelpOption(cmd)) {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("Parameters", options);
 			System.exit(1);
