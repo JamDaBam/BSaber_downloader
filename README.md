@@ -16,5 +16,7 @@ For now it's not possible to do more options at once.
 
 
 # Planned features
+* Download songs by thumbs up ratio
 * Download newest songs of mapper/s
 * Mapper and difficulty in filename
+
