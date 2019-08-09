@@ -2,13 +2,10 @@ package bsaber.tools.bsaber_scrapper;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.LogManager;
@@ -17,8 +14,7 @@ import org.apache.log4j.Logger;
 public class BSaberEntry {
 	private static final Logger cvLogger = LogManager.getLogger(BSaberEntry.class);
 
-//	private static final String DOWNLOAD_PATH = "Z:\\BSaberSongs\\";
-	private static final String ILLEGAL_CHARACTERS = "[^a-zA-Z0-9\\.\\-]";
+	private static final String ILLEGAL_CHARACTERS = "[^a-zA-Z0-9()\\.\\-]";
 
 	private static int cvNewDownloads = 0;
 	private static int cvAlreadyDownloads = 0;
@@ -26,33 +22,87 @@ public class BSaberEntry {
 	private static Set<BSaberEntry> cvNewSongs = new HashSet<>();
 	private static Set<BSaberEntry> cvSongsWithErrors = new HashSet<>();
 
-	private String ivSongID;
-	private String ivName;
+	private BSaberEntryRawData ivRawData;
+
+	private String ivMapper;
+	private String ivTitle;
+	private String ivSongId;
 	private String ivDownloadUrl;
-	private String ivPath;
 	private boolean ivDownloaded = false;
 
-	public BSaberEntry(String aSongID, String aName, String aDownloadUrl, String aPath) {
-		ivSongID = aSongID;
-		ivName = aName;
+	private int ivThumbsUp = 0;
+	private int ivThumbsDown = 0;
+
+	private List<String> ivDifficulties = new ArrayList<>();
+
+	public BSaberEntry(BSaberEntryRawData aRawData) {
+		ivRawData = aRawData;
+	}
+
+	public BSaberEntry(String aSongId, String aName, String aDownloadUrl) {
+		ivSongId = aSongId;
+		ivTitle = aName;
 		ivDownloadUrl = aDownloadUrl;
-		ivPath = aPath;
 	}
 
-	public String getSongID() {
-		return ivSongID;
+	public BSaberEntryRawData getRawData() {
+		return ivRawData;
 	}
 
-	public String getName() {
-		return ivName;
+	public String getMapper() {
+		return ivMapper;
+	}
+
+	public void setMapper(String aMapper) {
+		ivMapper = aMapper;
+	}
+
+	public int getThumbsUp() {
+		return ivThumbsUp;
+	}
+
+	public void setThumbsUp(int aThumbsUp) {
+		ivThumbsUp = aThumbsUp;
+	}
+
+	public int getThumbsDown() {
+		return ivThumbsDown;
+	}
+
+	public void setThumbsDown(int aThumbsDown) {
+		ivThumbsDown = aThumbsDown;
+	}
+
+	public List<String> getDifficulties() {
+		return ivDifficulties;
+	}
+
+	public void setDifficulties(List<String> aDifficulties) {
+		ivDifficulties = aDifficulties;
+	}
+
+	public String getSongId() {
+		return ivSongId;
+	}
+
+	public void setSongId(String aSongId) {
+		ivSongId = aSongId;
+	}
+
+	public String getTitle() {
+		return ivTitle;
+	}
+
+	public void setTitle(String aTitle) {
+		ivTitle = aTitle;
 	}
 
 	public String getDownloadUrl() {
 		return ivDownloadUrl;
 	}
 
-	public String getPath() {
-		return ivPath;
+	public void setDownloadUrl(String aDownloadUrl) {
+		ivDownloadUrl = aDownloadUrl;
 	}
 
 	public boolean isDownloaded() {
@@ -106,65 +156,56 @@ public class BSaberEntry {
 	}
 
 	private String getDownloadName() {
-		String name = getName().replaceAll(ILLEGAL_CHARACTERS, "_");
-		return getSongID() + " (" + name + ").zip";
+		String name = getTitle() + ", " + getMapper() + " " + Tools.difficultiesToString(getDifficulties());
+		name = name.replaceAll(ILLEGAL_CHARACTERS, "_");
+
+		return getSongId() + " (" + name + ").zip";
 	}
 
-	public boolean download() {
-		File downloadFile = new File(getPath() + getDownloadName());
-		try {
-			if (!downloadFile.exists()) {
-				if (!downloadFile.getParentFile().exists()) {
-					downloadFile.getParentFile().mkdirs();
+	public boolean download(String aPath) {
+
+		// Checks songidprefix of files in downloadpath if found one or more files skip.
+		if (!Tools.checkSongIdAlreadyDownloaded(aPath, getSongId())) {
+			File downloadFile = new File(aPath + getDownloadName());
+			try {
+				// Doublecheck if the new file exists
+				if (!downloadFile.exists()) {
+					if (!downloadFile.getParentFile().exists()) {
+						downloadFile.getParentFile().mkdirs();
+					}
+
+					URL url = new URL(getDownloadUrl());
+					Tools.saveUrl(downloadFile.toPath(), url, 30, 30);
+
+					cvNewDownloads++;
+					cvDownloadedTotal++;
+					downloadFinish();
+
+					cvNewSongs.add(this);
+
+					return isDownloaded();
+				} else {
+					cvAlreadyDownloads++;
+					cvDownloadedTotal++;
+					downloadFinish();
+
+					return isDownloaded();
 				}
-
-				URL url = new URL(getDownloadUrl());
-				saveUrl(downloadFile.toPath(), url, 30, 30);
-
-				cvNewDownloads++;
-				cvDownloadedTotal++;
-				downloadFinish();
-
-				cvNewSongs.add(this);
-
-				return isDownloaded();
-			} else {
-				cvAlreadyDownloads++;
-				cvDownloadedTotal++;
-				downloadFinish();
-
-				return isDownloaded();
+			} catch (IOException e) {
+				e.printStackTrace();
+				cvSongsWithErrors.add(this);
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			cvSongsWithErrors.add(this);
+		} else {
+			cvAlreadyDownloads++;
+			cvDownloadedTotal++;
+			downloadFinish();
 		}
 
 		return isDownloaded();
 	}
 
-	private static void saveUrl(final Path aFile, final URL aUrl, int aSecsConnectTimeout, int aSecsReadTimeout)
-			throws MalformedURLException, IOException {
-		try (InputStream in = streamFromUrl(aUrl, aSecsConnectTimeout, aSecsReadTimeout)) {
-			Files.copy(in, aFile);
-		}
-	}
-
-	private static InputStream streamFromUrl(URL aUrl, int aSecsConnectTimeout, int aSecsReadTimeout)
-			throws IOException {
-		URLConnection conn = aUrl.openConnection();
-		conn.setRequestProperty("User-Agent",
-				"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11");
-
-		if (aSecsConnectTimeout > 0)
-			conn.setConnectTimeout(aSecsConnectTimeout * 1000);
-		if (aSecsReadTimeout > 0)
-			conn.setReadTimeout(aSecsReadTimeout * 1000);
-		return conn.getInputStream();
-	}
-
 	@Override
 	public String toString() {
-		return getSongID() + " --> " + getName() + " (" + getDownloadUrl() + ")";
+		return getRawData().toString();
 	}
 }

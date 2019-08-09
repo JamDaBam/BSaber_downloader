@@ -1,6 +1,6 @@
 package bsaber.tools.bsaber_scrapper;
 
-public class BSaberScrapperConstants {
+public class Constants {
 	public static final String PARAMETER_HELP = "h";
 	public static final String PARAMETER_PAGERANGE = "pagerange";
 	public static final String PARAMETER_PAGE = "page";
@@ -11,8 +11,8 @@ public class BSaberScrapperConstants {
 	public static final String BSABER_BASE_DOWNLOAD_URL = "https://beatsaver.com/api/download/key/";
 	public static final String BSABER_SONGS_PAGE_URL = "https://bsaber.com/songs/page/";
 
-	public static final String QUERY_SONG_ENTRY = "header.post-title > h1";
-	public static final String QUERY_SONG_ENTRIES = "h4 > a";
+	public static final String QUERY_SONG_ENTRY = "div.post-header";
+	public static final String QUERY_SONG_ENTRIES = "article";
 	public static final String QUERY_LINKS = "a.-download-zip";
 	public static final String TAG_LINK = "href";
 
