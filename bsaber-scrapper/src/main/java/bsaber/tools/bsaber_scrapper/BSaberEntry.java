@@ -1,6 +1,7 @@
 package bsaber.tools.bsaber_scrapper;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import org.apache.log4j.Logger;
 public class BSaberEntry {
 	private static final Logger cvLogger = LogManager.getLogger(BSaberEntry.class);
 
-	private static final String ILLEGAL_CHARACTERS = "[^a-zA-Z0-9()\\.\\-]";
+	private static final String ILLEGAL_CHARACTERS = "[^a-zA-Z0-9()\\., \\-]";
 
 	private static int cvNewDownloads = 0;
 	private static int cvAlreadyDownloads = 0;
@@ -156,10 +157,10 @@ public class BSaberEntry {
 	}
 
 	private String getDownloadName() {
-		String name = getTitle() + ", " + getMapper() + " " + Tools.difficultiesToString(getDifficulties());
+		String name = getTitle() + " (" + getMapper() + " " + Tools.difficultiesToString(getDifficulties()) + ")";
 		name = name.replaceAll(ILLEGAL_CHARACTERS, "_");
 
-		return getSongId() + " (" + name + ").zip";
+		return getSongId() + " - " + name + ".zip";
 	}
 
 	public boolean download(String aPath) {
@@ -192,7 +193,9 @@ public class BSaberEntry {
 					return isDownloaded();
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				if (e instanceof FileNotFoundException) {
+					cvLogger.error("File not found " + toString());
+				}
 				cvSongsWithErrors.add(this);
 			}
 		} else {
