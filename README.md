@@ -14,6 +14,8 @@ For now it's not possible to do more options at once.
 ## Example
 * java -jar BSaberSongScrapper.jar -path c:\Downloads\ -pagerange 1 5
 
+* Outputfile: &lt;SongId&gt; - &lt;Title&gt; (&lt;Mapper&gt; (&lt;Difficulties&gt;))
+  + 5b6f - Nicola Fasano _ Miami Rockets _ I like to move it (jessi81_1 (Normal, Hard, Expert))
 
 # Planned features
 * Download ranked songs
