@@ -15,7 +15,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingOptionException;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.log4j.BasicConfigurator;
@@ -36,13 +35,13 @@ public class BSaberSongScrapper {
 	public static void main(String[] args) throws ParseException, InterruptedException {
 		BasicConfigurator.configure();
 
-		Options options = generateOptions();
+		Options options = Tools.CommandLineTools.generateOptions();
 
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = parser.parse(options, args);
 
 		// Process help
-		if (args.length == 0 || isHelpOption(cmd)) {
+		if (args.length == 0 || Tools.CommandLineTools.isHelpOption(cmd)) {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("Parameters", options);
 			System.exit(1);
@@ -50,14 +49,20 @@ public class BSaberSongScrapper {
 
 		// Process path
 		String path;
-		if (isPathOption(cmd)) {
+		if (Tools.CommandLineTools.isPathOption(cmd)) {
 			path = Tools.checkPath(cmd.getOptionValue(Constants.PARAMETER_PATH));
 		} else {
 			throw new MissingOptionException("Missing required option: " + Constants.PARAMETER_PATH);
 		}
 
+		// Process ratio
+		Float ratio = null;
+		if (Tools.CommandLineTools.isRatioOption(cmd)) {
+			ratio = Float.parseFloat(cmd.getOptionValue(Constants.PARAMETER_RATIO));
+		}
+
 		// Process range of pages
-		if (isPageRangeOption(cmd)) {
+		if (Tools.CommandLineTools.isPageRangeOption(cmd)) {
 			String[] pageRange = cmd.getOptionValues(Constants.PARAMETER_PAGERANGE);
 
 			Integer pageStart = null;
@@ -66,10 +71,11 @@ public class BSaberSongScrapper {
 			pageStart = Integer.parseInt(pageRange[0]);
 			pageEnd = Integer.parseInt(pageRange[1]);
 
-			downloadPages(path, pageStart, pageEnd);
+			int[] pages = processPageRange(pageStart, pageEnd);
+			downloadPages(path, ratio, pages);
 		}
 		// Process pages
-		else if (isPageOption(cmd)) {
+		else if (Tools.CommandLineTools.isPageOption(cmd)) {
 			String[] pageNumbersString = cmd.getOptionValues(Constants.PARAMETER_PAGE);
 			int pageNumbersLength = pageNumbersString.length;
 			int[] pageNumbersInt = new int[pageNumbersLength];
@@ -78,12 +84,12 @@ public class BSaberSongScrapper {
 				pageNumbersInt[i] = Integer.parseInt(pageNumbersString[i]);
 			}
 
-			downloadPages(path, pageNumbersInt);
+			downloadPages(path, ratio, pageNumbersInt);
 		}
 		// Procces songids
-		else if (isSongIdOption(cmd)) {
+		else if (Tools.CommandLineTools.isSongIdOption(cmd)) {
 			String[] songIds = cmd.getOptionValues(Constants.PARAMETER_SONGID);
-			downloadSongs(path, songIds);
+			downloadSongs(path, ratio, songIds);
 		} else {
 			throw new IllegalArgumentException("False parameters " + Arrays.deepToString(args));
 		}
@@ -95,7 +101,7 @@ public class BSaberSongScrapper {
 		System.exit(1);
 	}
 
-	public static void downloadPages(String aPath, int aPageStart, int aPageEnd) {
+	private static int[] processPageRange(Integer aPageStart, Integer aPageEnd) {
 		if (aPageStart == 0) {
 			throw new IllegalArgumentException("aFrom has to be greater than 0");
 		}
@@ -106,18 +112,16 @@ public class BSaberSongScrapper {
 		int maxPoolSize = aPageEnd - aPageStart + Constants.CORE_SIZE;
 		EXECUTOR.setMaximumPoolSize(maxPoolSize);
 
-		IntStream.range(aPageStart, aPageEnd + 1).forEach(aPageNumber -> {
-			downloadPage(aPath, aPageNumber);
-		});
+		return IntStream.range(aPageStart, aPageEnd + 1).toArray();
 	}
 
-	public static void downloadPages(String aPath, int... aPageNumbers) {
+	public static void downloadPages(String aPath, Float aRatio, int... aPageNumbers) {
 		for (int pageNumber : aPageNumbers) {
-			downloadPage(aPath, pageNumber);
+			downloadPage(aPath, aRatio, pageNumber);
 		}
 	}
 
-	public static void downloadPage(String aPath, int aPageNumber) {
+	public static void downloadPage(String aPath, Float aRatio, int aPageNumber) {
 		EXECUTOR.submit(() -> {
 			long start = System.currentTimeMillis();
 
@@ -135,7 +139,14 @@ public class BSaberSongScrapper {
 				List<BSaberEntry> downloadEntries = new ArrayList<>();
 
 				for (Element songEntryElement : songEntries) {
-					downloadEntries.add(new BSaberEntryRawData(songEntryElement).parse());
+					BSaberEntry bSaberEntry = new BSaberEntryRawData(songEntryElement).parse();
+
+					if (checkBSaberRatio(aRatio, bSaberEntry)) {
+						downloadEntries.add(bSaberEntry);
+					} else {
+						cvLogger.debug("Skip by ratio: " + aRatio + " > " + bSaberEntry.getRatio() + " - "
+								+ bSaberEntry.getSongId() + " - " + bSaberEntry.getTitle());
+					}
 				}
 
 				int downloaded = 0;
@@ -158,15 +169,15 @@ public class BSaberSongScrapper {
 		});
 	}
 
-	public static void downloadSongs(String aPath, String... aSongIds) {
+	public static void downloadSongs(String aPath, Float aRatio, String... aSongIds) {
 		if (aSongIds != null) {
 			for (String aSongId : aSongIds) {
-				downloadSong(aPath, aSongId);
+				downloadSong(aPath, aRatio, aSongId);
 			}
 		}
 	}
 
-	private static void downloadSong(String aPath, String aSongId) {
+	private static void downloadSong(String aPath, Float aRatio, String aSongId) {
 		EXECUTOR.submit(() -> {
 			long start = System.currentTimeMillis();
 
@@ -183,8 +194,15 @@ public class BSaberSongScrapper {
 				int downloaded = 0;
 
 				for (Element songEntryElement : songEntry) {
-					if (new BSaberEntryRawData(songEntryElement).parse().download(aPath)) {
-						downloaded++;
+					BSaberEntry bSaberEntry = new BSaberEntryRawData(songEntryElement).parse();
+
+					if (checkBSaberRatio(aRatio, bSaberEntry)) {
+						if (bSaberEntry.download(aPath)) {
+							downloaded++;
+						}
+					} else {
+						cvLogger.debug("Skip by ratio: " + aRatio + " > " + bSaberEntry.getRatio() + " - "
+								+ bSaberEntry.getSongId() + " - " + bSaberEntry.getTitle());
 					}
 				}
 
@@ -196,92 +214,9 @@ public class BSaberSongScrapper {
 				e.printStackTrace();
 			}
 		});
-
 	}
 
-	private static Options generateOptions() {
-		Options options = new Options();
-
-		Option optionHelp = new Option(Constants.PARAMETER_HELP, false, "Help");
-		options.addOption(optionHelp);
-
-		Option optionPageRange = new Option(Constants.PARAMETER_PAGERANGE, true,
-				"Defines a range of pages. The startpage must be greater than zero and less than or equal to endpage.");
-		optionPageRange.setOptionalArg(false);
-		optionPageRange.setArgs(2);
-		optionPageRange.setArgName("PAGESTART PAGEEND");
-		options.addOption(optionPageRange);
-
-		Option optionPage = new Option(Constants.PARAMETER_PAGE, true, "Defines pages to download.");
-		optionPage.setArgs(Option.UNLIMITED_VALUES);
-		optionPage.setArgName("PAGENUMBERS");
-		optionPage.setOptionalArg(false);
-		options.addOption(optionPage);
-
-		Option optionSongId = new Option(Constants.PARAMETER_SONGID, true, "Defines songids to download");
-		optionSongId.setArgs(Option.UNLIMITED_VALUES);
-		optionSongId.setArgName("SONGIDS");
-		optionSongId.setOptionalArg(false);
-		options.addOption(optionSongId);
-
-		Option optionPath = new Option(Constants.PARAMETER_PATH, true,
-				"Defines the downloadfolder. If not set an absolute path then the tool creates the downloadfolder beside the executionpath.");
-		optionPath.setArgName("DOWNLOADPATH [REQUIRED]");
-		optionPath.setOptionalArg(false);
-		options.addOption(optionPath);
-
-		return options;
-	}
-
-	private static boolean hasOption(CommandLine aCmd, String... aOptions) {
-		boolean res = true;
-
-		for (String option : aOptions) {
-			if (res) {
-				res = aCmd.hasOption(option);
-			} else {
-				break;
-			}
-		}
-
-		return res;
-	}
-
-	private static boolean hasNotOption(CommandLine aCmd, String... aOptions) {
-		boolean res = true;
-
-		for (String option : aOptions) {
-			if (res) {
-				res = !aCmd.hasOption(option);
-			} else {
-				break;
-			}
-		}
-
-		return res;
-	}
-
-	private static boolean isSongIdOption(CommandLine cmd) {
-		return hasOption(cmd, Constants.PARAMETER_SONGID)
-				&& hasNotOption(cmd, Constants.PARAMETER_PAGE, Constants.PARAMETER_PAGERANGE, Constants.PARAMETER_HELP);
-	}
-
-	private static boolean isPageOption(CommandLine cmd) {
-		return hasOption(cmd, Constants.PARAMETER_PAGE) && hasNotOption(cmd, Constants.PARAMETER_PAGERANGE,
-				Constants.PARAMETER_SONGID, Constants.PARAMETER_HELP);
-	}
-
-	private static boolean isPageRangeOption(CommandLine cmd) {
-		return hasOption(cmd, Constants.PARAMETER_PAGERANGE)
-				&& hasNotOption(cmd, Constants.PARAMETER_PAGE, Constants.PARAMETER_SONGID, Constants.PARAMETER_HELP);
-	}
-
-	private static boolean isPathOption(CommandLine cmd) {
-		return cmd.hasOption(Constants.PARAMETER_PATH);
-	}
-
-	private static boolean isHelpOption(CommandLine cmd) {
-		return hasOption(cmd, Constants.PARAMETER_HELP) && hasNotOption(cmd, Constants.PARAMETER_PAGE,
-				Constants.PARAMETER_PAGERANGE, Constants.PARAMETER_PATH, Constants.PARAMETER_SONGID);
+	private static boolean checkBSaberRatio(Float aRatio, BSaberEntry aBSaberEntry) {
+		return aRatio == null || aRatio <= aBSaberEntry.getRatio();
 	}
 }

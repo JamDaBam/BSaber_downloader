@@ -17,8 +17,10 @@ public class BSaberEntryRawData {
 	private String ivSongId;
 	private String ivDownloadUrl;
 
+	private int ivThumbs = 0;
 	private int ivThumbsUp = 0;
 	private int ivThumbsDown = 0;
+	private float ivRatio = 0;
 
 	private List<String> ivDifficulties = new ArrayList<>();
 
@@ -40,6 +42,8 @@ public class BSaberEntryRawData {
 		entry.setDownloadUrl(ivDownloadUrl);
 		entry.setThumbsDown(ivThumbsDown);
 		entry.setThumbsUp(ivThumbsUp);
+		entry.setThumbs(ivThumbs);
+		entry.setRatio(ivRatio);
 		entry.setDifficulties(ivDifficulties);
 		return entry;
 	}
@@ -56,7 +60,7 @@ public class BSaberEntryRawData {
 					if (!Tools.isNullOrEmpty(element.children())) {
 						Element child = element.child(0);
 						ivTitle = child.text();
-						ivSongId = Tools.extractID(child.attr("href"), Constants.BSABER_BASE_SONGS_URL);
+						ivSongId = extractID(child.attr("href"), Constants.BSABER_BASE_SONGS_URL);
 					}
 					// Singleentry
 					else {
@@ -70,10 +74,14 @@ public class BSaberEntryRawData {
 
 				if (element.hasClass("fa-thumbs-up")) {
 					ivThumbsUp = Integer.parseInt(element.parent().text());
+					ivThumbs += ivThumbsUp;
+					calcRatio();
 				}
 
 				if (element.hasClass("fa-thumbs-down")) {
 					ivThumbsDown = Integer.parseInt(element.parent().text());
+					ivThumbs += ivThumbsDown;
+					calcRatio();
 				}
 
 				if (element.hasClass("-download-zip")) {
@@ -81,7 +89,7 @@ public class BSaberEntryRawData {
 
 					// Singleentry
 					if (ivSongId == null) {
-						ivSongId = Tools.extractID(ivDownloadUrl, Constants.BSABER_BASE_DOWNLOAD_URL);
+						ivSongId = extractID(ivDownloadUrl, Constants.BSABER_BASE_DOWNLOAD_URL);
 					}
 				}
 
@@ -90,9 +98,20 @@ public class BSaberEntryRawData {
 		}
 	}
 
+	private String extractID(String aHref, String aCutString) {
+		return aHref.replace(aCutString, "").replace("/", "");
+	}
+
+	private void calcRatio() {
+		if (ivThumbs > 0) {
+			ivRatio = (float) ivThumbsUp / (float) ivThumbs;
+		}
+	}
+
 	@Override
 	public String toString() {
 		return ivSongId + " - " + ivMapper + " - " + ivTitle + Tools.difficultiesToString(ivDifficulties) + " Upvote: "
-				+ ivThumbsUp + " Downvote: " + ivThumbsDown + " --> " + ivDownloadUrl;
+				+ ivThumbsUp + " Downvote: " + ivThumbsDown + " Votes: " + ivThumbs + " Ratio: " + ivRatio + " --> "
+				+ ivDownloadUrl;
 	}
 }

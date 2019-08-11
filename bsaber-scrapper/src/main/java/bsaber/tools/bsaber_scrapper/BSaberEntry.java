@@ -31,8 +31,10 @@ public class BSaberEntry {
 	private String ivDownloadUrl;
 	private boolean ivDownloaded = false;
 
+	private int ivThumbs = 0;
 	private int ivThumbsUp = 0;
 	private int ivThumbsDown = 0;
+	private float ivRatio = 0;
 
 	private List<String> ivDifficulties = new ArrayList<>();
 
@@ -72,6 +74,22 @@ public class BSaberEntry {
 
 	public void setThumbsDown(int aThumbsDown) {
 		ivThumbsDown = aThumbsDown;
+	}
+
+	public void setRatio(float aRatio) {
+		ivRatio = aRatio;
+	}
+
+	public float getRatio() {
+		return ivRatio;
+	}
+
+	public void setThumbs(int aThumbs) {
+		ivThumbs = aThumbs;
+	}
+
+	public int getThumbs() {
+		return ivThumbs;
 	}
 
 	public List<String> getDifficulties() {
@@ -166,7 +184,7 @@ public class BSaberEntry {
 	public boolean download(String aPath) {
 
 		// Checks songidprefix of files in downloadpath if found one or more files skip.
-		if (!Tools.checkSongIdAlreadyDownloaded(aPath, getSongId())) {
+		if (!Tools.DownloadTools.checkSongIdAlreadyDownloaded(aPath, getSongId())) {
 			File downloadFile = new File(aPath + getDownloadName());
 			try {
 				// Doublecheck if the new file exists
@@ -176,7 +194,7 @@ public class BSaberEntry {
 					}
 
 					URL url = new URL(getDownloadUrl());
-					Tools.saveUrl(downloadFile.toPath(), url, 30, 30);
+					Tools.DownloadTools.saveUrl(downloadFile.toPath(), url, 30, 30);
 
 					cvNewDownloads++;
 					cvDownloadedTotal++;
