@@ -1,4 +1,7 @@
 # Changelog:
+### v0.6.5
+* Revamp whole scrapeengine **(10x faster)**
+
 ## v0.6
 * Download song by thumbs up ratio
 
