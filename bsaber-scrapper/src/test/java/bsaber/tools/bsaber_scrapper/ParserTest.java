@@ -81,7 +81,7 @@ public class ParserTest {
 		SongEntry songEntry = songEntries.get(0);
 		SongEntry songEntry2 = songEntries.get(1);
 		SongEntry songEntry3 = songEntries.get(2);
-			j
+			
 		assertEquals("Key: 5f02 LevelAuthorName: mrSmile SongAuthorName: Team Grimoire SongName: G1ll35 d3 R415 (No Arrows) SongSubName: null Difficulties: easy, expert, expertPlus, hard, normal Upvotes: 0 Downvotes: 0 Heat: 924.1785 Rating: 0.0 DownloadURL: https://beatsaver.com/api/download/key/5f02", songEntry.toString());
 		assertEquals("Key: 5f01 LevelAuthorName: HaiXuZ SongAuthorName: Nanawoakari/Nayutan Seijin SongName: Dadadada Angel - Minato Aqua SongSubName: null Difficulties: easy, expert, expertPlus, hard, normal Upvotes: 0 Downvotes: 0 Heat: 924.153 Rating: 0.0 DownloadURL: https://beatsaver.com/api/download/key/5f01", songEntry2.toString());
 		assertEquals("Key: 5f00 LevelAuthorName: Pug SongAuthorName: saradisk SongName: 166 - Suzuya Homerarete Nobiru Type Nandesu. SongSubName: null Difficulties: easy, expert, expertPlus, hard, normal Upvotes: 0 Downvotes: 0 Heat: 924.11237 Rating: 0.0 DownloadURL: https://beatsaver.com/api/download/key/5f00", songEntry3.toString());

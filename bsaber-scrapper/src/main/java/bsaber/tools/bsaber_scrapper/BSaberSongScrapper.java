@@ -28,7 +28,8 @@ public class BSaberSongScrapper implements SongScrapper {
 			long start = System.currentTimeMillis();
 
 			try {
-				String urlString = aPageNumber == 1 ? Constants.BSABER_BASE_SONGS_URL : Constants.BSABER_SONGS_PAGE_URL + aPageNumber;
+				String urlString = aPageNumber == 1 ? Constants.BSABER_BASE_SONGS_URL
+						: Constants.BSABER_SONGS_PAGE_URL + aPageNumber;
 
 				URL url = new URL(urlString);
 
@@ -39,7 +40,7 @@ public class BSaberSongScrapper implements SongScrapper {
 				cvLogger.debug("DONE " + urlString + " (" + (end - start) + ")");
 
 				for (SongEntry songEntry : BSaberParser.parse(songEntryElements)) {
-					if (checkBSaberRatio(aRatio, songEntry)) {
+					if (songEntry.checkUpVoteRatio(aRatio)) {
 						songEntry.download(aPath);
 					} else {
 						cvLogger.debug("Skip by ratio: " + aRatio + " > " + songEntry.getRatio() + ": "
@@ -53,20 +54,20 @@ public class BSaberSongScrapper implements SongScrapper {
 	}
 
 	@Override
-	public void downloadSongs(String aPath, Float aRatio, String... aSongIds) {
-		if (aSongIds != null) {
-			for (String aSongId : aSongIds) {
+	public void downloadSongs(String aPath, Float aRatio, String... aSongKeys) {
+		if (aSongKeys != null) {
+			for (String aSongId : aSongKeys) {
 				downloadSong(aPath, aRatio, aSongId);
 			}
 		}
 	}
 
-	private void downloadSong(String aPath, Float aRatio, String aSongId) {
+	private void downloadSong(String aPath, Float aRatio, String aSongKey) {
 		Constants.EXECUTOR.submit(() -> {
 			long start = System.currentTimeMillis();
 
 			try {
-				String urlString = Constants.BSABER_BASE_SONGS_URL + aSongId;
+				String urlString = Constants.BSABER_BASE_SONGS_URL + aSongKey;
 
 				URL url = new URL(urlString);
 
@@ -74,7 +75,7 @@ public class BSaberSongScrapper implements SongScrapper {
 				Elements songEntryElements = doc.select(QUERY_SONG_ENTRY);
 
 				for (SongEntry songEntry : BSaberParser.parse(songEntryElements)) {
-					if (checkBSaberRatio(aRatio, songEntry)) {
+					if (songEntry.checkUpVoteRatio(aRatio)) {
 						songEntry.download(aPath);
 					} else {
 						cvLogger.debug("Skip by ratio: " + aRatio + " > " + songEntry.getRatio() + ": "
@@ -89,9 +90,4 @@ public class BSaberSongScrapper implements SongScrapper {
 			}
 		});
 	}
-
-	private boolean checkBSaberRatio(Float aRatio, SongEntry aSongEntry) {
-		return aRatio == null || aRatio <= aSongEntry.getRatio();
-	}
-
 }

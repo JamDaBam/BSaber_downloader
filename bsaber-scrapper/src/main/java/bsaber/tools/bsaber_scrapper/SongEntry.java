@@ -26,8 +26,9 @@ public class SongEntry {
 	}
 
 	private String getDownloadName() {
-		String name = ivMetaData.getSongName() + " (" + ivMetaData.getLevelAuthorName() + " " + " ("
-				+ ivMetaData.getDifficultiesAsString() + "))";
+		String name = ivMetaData.getSongAuthorName() == null ? ""
+				: (ivMetaData.getSongAuthorName() + " - ") + ivMetaData.getSongName() + " ("
+						+ ivMetaData.getLevelAuthorName() + " " + " (" + ivMetaData.getDifficultiesAsString() + "))";
 		name = name.replaceAll(ILLEGAL_CHARACTERS, "_");
 
 		return ivMetaData.getKey() + " - " + name + ".zip";
@@ -48,7 +49,9 @@ public class SongEntry {
 
 					URL url = new URL(ivMetaData.getDownloadURL());
 					saveUrl(downloadFile.toPath(), url, 30, 30);
-
+					cvLogger.info("Downloaded: " + toString());
+				} else {
+					cvLogger.info("File exists: " + toString());
 				}
 
 				isDownloaded = true;
@@ -59,6 +62,7 @@ public class SongEntry {
 			}
 		} else {
 			isDownloaded = true;
+			cvLogger.info("Key exists: " + toString());
 		}
 
 		return isDownloaded;
@@ -114,6 +118,10 @@ public class SongEntry {
 		}
 
 		return ratio;
+	}
+
+	public boolean checkUpVoteRatio(Float aRatio) {
+		return aRatio == null || aRatio <= getRatio();
 	}
 
 	public SongMetaData getMetaData() {

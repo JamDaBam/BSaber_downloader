@@ -26,19 +26,12 @@ public class BeatSaberSongScrapperMain {
 	public static void main(String[] args) throws ParseException, InterruptedException {
 		BasicConfigurator.configure();
 
-		BeatSaverParser beatSaverParser = new BeatSaverParser();
-		beatSaverParser.parse("");
-		
-		System.exit(1);
-		
-		
-
 		Options options = generateOptions();
 
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = parser.parse(options, args);
 
-		SongScrapper songScrapper = new BSaberSongScrapper();
+		SongScrapper songScrapper = new BeatSaverSongScrapper();
 
 		// Process help
 		if (args.length == 0 || isHelpOption(cmd)) {

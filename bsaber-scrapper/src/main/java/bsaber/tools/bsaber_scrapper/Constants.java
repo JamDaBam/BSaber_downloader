@@ -11,7 +11,8 @@ public class Constants {
 
 	// Beatsaver
 	public static enum SearchTypes {
-		LATEST("/latest/"), HOT("/hot/"), DOWNLOADS("/downloads/"), PLAYS("/plays/"), RATING("/rating/");
+		LATEST("/latest/"), HOT("/hot/"), DOWNLOADS("/downloads/"), PLAYS("/plays/"), RATING("/rating/"),
+		SINGLE("/detail/");
 
 		private String ivSearchType;
 
@@ -19,13 +20,14 @@ public class Constants {
 			ivSearchType = aSearchType;
 		}
 
-		public String getCallUrl(int aPageNumber) {
-			return BEATSAVER_API_BASE_URL + ivSearchType + aPageNumber;
+		public String getCallUrl() {
+			return BEATSAVER_MAPS_CALL_BASE_URL + ivSearchType;
 		}
 	}
 
 	public static final String BEATSAVER_BASE_URL = "https://beatsaver.com";
 	public static final String BEATSAVER_API_BASE_URL = BEATSAVER_BASE_URL + "/api";
+	public static final String BEATSAVER_MAPS_CALL_BASE_URL = BEATSAVER_API_BASE_URL + "/maps";
 	public static final String BEATSAVER_DOWNLOAD_BASE_URL = BEATSAVER_API_BASE_URL + "/download/";
 
 	// Threads

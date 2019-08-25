@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import bsaber.tools.bsaber_scrapper.Constants.SearchTypes;
+
 public class SongMetaData {
 	private String ivKey;
 	private String ivSongName;
