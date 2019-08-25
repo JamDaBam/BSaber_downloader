@@ -37,9 +37,11 @@ public class SongEntry {
 	public boolean download(String aPath) {
 		boolean isDownloaded = false;
 
+		String downloadName = getDownloadName();
+
 		// Checks songidprefix of files in downloadpath if found one or more files skip.
 		if (!checkSongIdAlreadyDownloaded(aPath, ivMetaData.getKey())) {
-			File downloadFile = new File(aPath + getDownloadName());
+			File downloadFile = new File(aPath + downloadName);
 			try {
 				// Doublecheck if the new file exists
 				if (!downloadFile.exists()) {
@@ -49,20 +51,20 @@ public class SongEntry {
 
 					URL url = new URL(ivMetaData.getDownloadURL());
 					saveUrl(downloadFile.toPath(), url, 30, 30);
-					cvLogger.info("Downloaded: " + toString());
+					cvLogger.info("Downloaded: " + downloadName);
 				} else {
-					cvLogger.info("File exists: " + toString());
+					cvLogger.info("File exists: " + downloadName);
 				}
 
 				isDownloaded = true;
 			} catch (IOException e) {
 				if (e instanceof FileNotFoundException) {
-					cvLogger.error("File not found " + toString());
+					cvLogger.error("File not found " + downloadName);
 				}
 			}
 		} else {
 			isDownloaded = true;
-			cvLogger.info("Key exists: " + toString());
+			cvLogger.info("Key exists: " + downloadName);
 		}
 
 		return isDownloaded;
