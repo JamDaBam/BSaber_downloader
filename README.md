@@ -12,7 +12,7 @@ The ratio of songs is measured by (thumbs up / thumbs total)
 | &#8209;page | Defines pages to download. |
 | &#8209;pagerange | Defines a range of pages. The startpage must be greater than zero and less than or equal to endpage. |
 | &#8209;path | Defines the downloadfolder. If not set an absolute path then the tool creates the downloadfolder beside the executionpath. |
-| &#8209;ratio | Defines a thumbs up ratio between 0.0 to 1.0. |  
+| &#8209;ratio | Defines a upvote ratio between 0.0 to 1.0. |  
 | &#8209;songid | Defines songids to download |
 
 ## Example
