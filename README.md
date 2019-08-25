@@ -16,12 +16,20 @@ The ratio of songs is measured by (thumbs up / thumbs total)
 | &#8209;songid | Defines songids to download |
 
 ## Example
-* java -jar BSaberSongScrapper.jar -path c:\Downloads\ -pagerange 1 5
+* java -jar BeatSaberSongScrapper.jar -path c:\Downloads\ -pagerange 1 5
 
 * Outputfile: &lt;SongId&gt; - &lt;Title&gt; (&lt;Mapper&gt; (&lt;Difficulties&gt;))
   + 5b6f - Nicola Fasano _ Miami Rockets _ I like to move it (jessi81_1 (Normal, Hard, Expert))
 
 # Planned features
+* Download top hottest songs
+* Download top downloaded songs
+* Download most played songs
+* Donwload best rated songs
+* Filter songs based on heat ratio
+* Filter songs based on rating
 * Download ranked songs
 * Download newest songs of mapper/s
+
+
 
