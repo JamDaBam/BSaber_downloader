@@ -7,7 +7,7 @@ import java.net.URL;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-public class BeatSaverSongScrapper implements SongScrapper {
+public class BeatSaverSongScrapper extends BaseSongScrapper {
 	private static final Logger cvLogger = LogManager.getLogger(BeatSaverSongScrapper.class);
 
 	@Override
@@ -27,8 +27,10 @@ public class BeatSaverSongScrapper implements SongScrapper {
 	private void downloadSong(String aPath, Float aRatio, String aSongKey) {
 		Constants.EXECUTOR.submit(() -> {
 			try {
-				for (SongEntry songEntry : BeatSaverParser
-						.parse(readUrl(Constants.SearchTypes.SINGLE.getCallUrl() + aSongKey))) {
+				String urlString = Constants.SearchTypes.SINGLE.getCallUrl() + aSongKey;
+				cvLogger.debug("Url: " + urlString);
+
+				for (SongEntry songEntry : BeatSaverParser.parse(readUrl(urlString))) {
 					if (songEntry.checkUpVoteRatio(aRatio)) {
 						songEntry.download(aPath);
 					} else {
@@ -45,8 +47,10 @@ public class BeatSaverSongScrapper implements SongScrapper {
 	private void downloadPage(String aPath, Float aRatio, int aPageNumber) {
 		Constants.EXECUTOR.submit(() -> {
 			try {
-				for (SongEntry songEntry : BeatSaverParser
-						.parse(readUrl(Constants.SearchTypes.LATEST.getCallUrl() + aPageNumber))) {
+				String urlString = Constants.SearchTypes.LATEST.getCallUrl() + aPageNumber;
+				cvLogger.debug("Url: " + urlString);
+
+				for (SongEntry songEntry : BeatSaverParser.parse(readUrl(urlString))) {
 					if (songEntry.checkUpVoteRatio(aRatio)) {
 						songEntry.download(aPath);
 					} else {
@@ -68,13 +72,15 @@ public class BeatSaverSongScrapper implements SongScrapper {
 			StringBuffer buffer = new StringBuffer();
 			int read;
 			char[] chars = new char[1024];
-			while ((read = reader.read(chars)) != -1)
+			while ((read = reader.read(chars)) != -1) {
 				buffer.append(chars, 0, read);
+			}
 
 			return buffer.toString();
 		} finally {
-			if (reader != null)
+			if (reader != null) {
 				reader.close();
+			}
 		}
 	}
 }

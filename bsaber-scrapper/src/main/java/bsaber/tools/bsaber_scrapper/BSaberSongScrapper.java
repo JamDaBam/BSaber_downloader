@@ -9,7 +9,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-public class BSaberSongScrapper implements SongScrapper {
+public class BSaberSongScrapper extends BaseSongScrapper {
 	private static final Logger cvLogger = LogManager.getLogger(BSaberSongScrapper.class);
 
 	// Html tags

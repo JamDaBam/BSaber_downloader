@@ -1,6 +1,7 @@
 package bsaber.tools.bsaber_scrapper;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.List;
 
@@ -81,12 +82,44 @@ public class ParserTest {
 		SongEntry songEntry = songEntries.get(0);
 		SongEntry songEntry2 = songEntries.get(1);
 		SongEntry songEntry3 = songEntries.get(2);
-			
-		assertEquals("Key: 5f02 LevelAuthorName: mrSmile SongAuthorName: Team Grimoire SongName: G1ll35 d3 R415 (No Arrows) SongSubName: null Difficulties: easy, expert, expertPlus, hard, normal Upvotes: 0 Downvotes: 0 Heat: 924.1785 Rating: 0.0 DownloadURL: https://beatsaver.com/api/download/key/5f02", songEntry.toString());
-		assertEquals("Key: 5f01 LevelAuthorName: HaiXuZ SongAuthorName: Nanawoakari/Nayutan Seijin SongName: Dadadada Angel - Minato Aqua SongSubName: null Difficulties: easy, expert, expertPlus, hard, normal Upvotes: 0 Downvotes: 0 Heat: 924.153 Rating: 0.0 DownloadURL: https://beatsaver.com/api/download/key/5f01", songEntry2.toString());
-		assertEquals("Key: 5f00 LevelAuthorName: Pug SongAuthorName: saradisk SongName: 166 - Suzuya Homerarete Nobiru Type Nandesu. SongSubName: null Difficulties: easy, expert, expertPlus, hard, normal Upvotes: 0 Downvotes: 0 Heat: 924.11237 Rating: 0.0 DownloadURL: https://beatsaver.com/api/download/key/5f00", songEntry3.toString());
+
+		assertEquals(songEntry.getMetaData().getKey(), "5f02");
+		assertEquals(songEntry.getMetaData().getLevelAuthorName(), "mrSmile");
+		assertEquals(songEntry.getMetaData().getSongAuthorName(), "Team Grimoire");
+		assertEquals(songEntry.getMetaData().getSongName(), "G1ll35 d3 R415 (No Arrows)");
+		assertNull(songEntry.getMetaData().getSongSubName());
+		assertEquals(songEntry.getMetaData().getDifficultiesAsString(), "easy, expert, expertPlus, hard, normal");
+		assertEquals(songEntry.getMetaData().getUpVotes(), 0, 0);
+		assertEquals(songEntry.getMetaData().getDownVotes(), 0, 0);
+		assertEquals(songEntry.getMetaData().getHeat(), 924.1785f, 0f);
+		assertEquals(songEntry.getMetaData().getRating(), 0.0f, 0f);
+		assertEquals(songEntry.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5f02");
+
+		assertEquals(songEntry2.getMetaData().getKey(), "5f01");
+		assertEquals(songEntry2.getMetaData().getLevelAuthorName(), "HaiXuZ");
+		assertEquals(songEntry2.getMetaData().getSongAuthorName(), "Nanawoakari/Nayutan Seijin");
+		assertEquals(songEntry2.getMetaData().getSongName(), "Dadadada Angel - Minato Aqua");
+		assertNull(songEntry2.getMetaData().getSongSubName());
+		assertEquals(songEntry2.getMetaData().getDifficultiesAsString(), "easy, expert, expertPlus, hard, normal");
+		assertEquals(songEntry2.getMetaData().getUpVotes(), 0, 0);
+		assertEquals(songEntry2.getMetaData().getDownVotes(), 0, 0);
+		assertEquals(songEntry2.getMetaData().getHeat(), 924.153f, 0f);
+		assertEquals(songEntry2.getMetaData().getRating(), 0.0f, 0f);
+		assertEquals(songEntry2.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5f01");
+
+		assertEquals(songEntry3.getMetaData().getKey(), "5f00");
+		assertEquals(songEntry3.getMetaData().getLevelAuthorName(), "Pug");
+		assertEquals(songEntry3.getMetaData().getSongAuthorName(), "saradisk");
+		assertEquals(songEntry3.getMetaData().getSongName(), "166 - Suzuya Homerarete Nobiru Type Nandesu.");
+		assertNull(songEntry3.getMetaData().getSongSubName());
+		assertEquals(songEntry3.getMetaData().getDifficultiesAsString(), "easy, expert, expertPlus, hard, normal");
+		assertEquals(songEntry3.getMetaData().getUpVotes(), 0, 0);
+		assertEquals(songEntry3.getMetaData().getDownVotes(), 0, 0);
+		assertEquals(songEntry3.getMetaData().getHeat(), 924.11237f, 0f);
+		assertEquals(songEntry3.getMetaData().getRating(), 0.0f, 0f);
+		assertEquals(songEntry3.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5f00");
 	}
-	
+
 	@Test
 	public void BeatSaverParserSingleEntryTest() {
 		String jsonString = "{\"metadata\":{\"difficulties\":{\"easy\":false,\"expert\":true,\"expertPlus\":false,\"hard\":false,\"normal\":false},\"characteristics\":[{\"difficulties\":{\"easy\":null,\"expert\":{\"duration\":675.875,\"length\":411,\"njs\":10,\"njsOffset\":0,\"bombs\":234,\"notes\":813,\"obstacles\":23},\"expertPlus\":null,\"hard\":null,\"normal\":null},\"name\":\"Standard\"}],\"levelAuthorName\":\"Yuki Yumeno\",\"songAuthorName\":\"NUKITASHI\",\"songName\":\"BWLAUTE BEIRRD\",\"songSubName\":\"\",\"bpm\":98.51000213623047},\"stats\":{\"downloads\":405,\"plays\":0,\"downVotes\":6,\"upVotes\":3,\"heat\":879.7282217,\"rating\":0.41666666666666663},\"description\":\"this is the my first Music score creation\\nJapan Eroge\\\"NUKITASHI 2\\\"\",\"deletedAt\":null,\"_id\":\"5d4411983abf3d000655fdaa\",\"key\":\"5a43\",\"name\":\"BWLAUTE BEIRRD [NUKITASHI2]\",\"uploader\":{\"_id\":\"5d4408b3130e0e0006937d97\",\"username\":\"kageki_usiromiya\"},\"hash\":\"40093b4bf1e79fe72e63766901affa9ebfbfb8fb\",\"uploaded\":\"2019-08-02T10:34:00.432Z\",\"directDownload\":\"/cdn/5a43/40093b4bf1e79fe72e63766901affa9ebfbfb8fb.zip\",\"downloadURL\":\"/api/download/key/5a43\",\"coverURL\":\"/cdn/5a43/40093b4bf1e79fe72e63766901affa9ebfbfb8fb.jpg\"}";
@@ -94,8 +127,17 @@ public class ParserTest {
 
 		assertEquals(1, songEntries.size());
 		SongEntry songEntry = songEntries.get(0);
-			
-		assertEquals("Key: 5a43 LevelAuthorName: Yuki Yumeno SongAuthorName: NUKITASHI SongName: BWLAUTE BEIRRD SongSubName: null Difficulties: easy, expert, expertPlus, hard, normal Upvotes: 3 Downvotes: 6 Heat: 879.7282 Rating: 0.41666666 DownloadURL: https://beatsaver.com/api/download/key/5a43", songEntry.toString());
-	}
 
+		assertEquals(songEntry.getMetaData().getKey(), "5a43");
+		assertEquals(songEntry.getMetaData().getLevelAuthorName(), "Yuki Yumeno");
+		assertEquals(songEntry.getMetaData().getSongAuthorName(), "NUKITASHI");
+		assertEquals(songEntry.getMetaData().getSongName(), "BWLAUTE BEIRRD");
+		assertNull(songEntry.getMetaData().getSongSubName());
+		assertEquals(songEntry.getMetaData().getDifficultiesAsString(), "easy, expert, expertPlus, hard, normal");
+		assertEquals(songEntry.getMetaData().getUpVotes(), 3, 0);
+		assertEquals(songEntry.getMetaData().getDownVotes(), 6, 0);
+		assertEquals(songEntry.getMetaData().getHeat(), 879.7282f, 0f);
+		assertEquals(songEntry.getMetaData().getRating(), 0.41666666f, 0f);
+		assertEquals(songEntry.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5a43");
+	}
 }
