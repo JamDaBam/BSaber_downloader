@@ -34,6 +34,13 @@ public class SongEntry {
 		return ivMetaData.getKey() + " - " + name + ".zip";
 	}
 
+	private String getDownloadUrl() {
+		String url = ivMetaData.getDirectDownload();
+		url = url == null ? ivMetaData.getDownloadURL() : url;
+
+		return url;
+	}
+
 	public boolean download(String aPath) {
 		boolean isDownloaded = false;
 
@@ -49,7 +56,7 @@ public class SongEntry {
 						downloadFile.getParentFile().mkdirs();
 					}
 
-					URL url = new URL(ivMetaData.getDownloadURL());
+					URL url = new URL(getDownloadUrl());
 					saveUrl(downloadFile.toPath(), url, 30, 30);
 					cvLogger.info("Downloaded: " + downloadName);
 				} else {

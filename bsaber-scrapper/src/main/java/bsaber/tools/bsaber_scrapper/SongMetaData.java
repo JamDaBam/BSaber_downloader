@@ -10,7 +10,9 @@ public class SongMetaData {
 	private String ivSongSubName;
 	private String ivLevelAuthorName;
 	private String ivSongAuthorName;
+	private String ivDirectDownload;
 	private String ivDownloadURL;
+	private String ivCoverUrl;
 	private Integer ivBpm;
 	private Integer ivDownVotes;
 	private Integer ivUpVotes;
@@ -61,12 +63,28 @@ public class SongMetaData {
 		ivSongAuthorName = aSongAuthorName;
 	}
 
+	public String getDirectDownload() {
+		return ivDirectDownload;
+	}
+
+	public void setDirectDownload(String aDirectDownload) {
+		ivDirectDownload = aDirectDownload;
+	}
+
 	public String getDownloadURL() {
 		return ivDownloadURL;
 	}
 
 	public void setDownloadURL(String aDownloadURL) {
 		ivDownloadURL = aDownloadURL;
+	}
+
+	public String getCoverUrl() {
+		return ivCoverUrl;
+	}
+
+	public void setCoverUrl(String aCoverUrl) {
+		ivCoverUrl = aCoverUrl;
 	}
 
 	public Integer getBpm() {

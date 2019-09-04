@@ -69,8 +69,20 @@ public class ParserTest {
 		assertEquals(1, songEntries.size());
 
 		SongEntry songEntry = songEntries.get(0);
-		String resString = "Key: 5ddd LevelAuthorName: Majorpickle SongAuthorName: null SongName: Vize – Glad You Came SongSubName: null Difficulties: Hard Upvotes: 89 Downvotes: 1 Heat: null Rating: null DownloadURL: https://beatsaver.com/api/download/key/5ddd";
-		assertEquals(resString, songEntry.toString());
+
+		assertEquals(songEntry.getMetaData().getKey(), "5ddd");
+		assertEquals(songEntry.getMetaData().getLevelAuthorName(), "Majorpickle");
+		assertNull(songEntry.getMetaData().getSongAuthorName());
+		assertEquals(songEntry.getMetaData().getSongName(), "Vize – Glad You Came");
+		assertNull(songEntry.getMetaData().getSongSubName());
+		assertEquals(songEntry.getMetaData().getDifficultiesAsString(), "Hard");
+		assertEquals(songEntry.getMetaData().getUpVotes(), 89, 0);
+		assertEquals(songEntry.getMetaData().getDownVotes(), 1, 0);
+		assertNull(songEntry.getMetaData().getHeat());
+		assertNull(songEntry.getMetaData().getRating());
+		assertEquals(songEntry.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5ddd");
+		assertNull(songEntry.getMetaData().getCoverUrl());
+		assertNull(songEntry.getMetaData().getDirectDownload());
 	}
 
 	@Test
@@ -94,6 +106,9 @@ public class ParserTest {
 		assertEquals(songEntry.getMetaData().getHeat(), 924.1785f, 0f);
 		assertEquals(songEntry.getMetaData().getRating(), 0.0f, 0f);
 		assertEquals(songEntry.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5f02");
+		assertEquals(songEntry.getMetaData().getCoverUrl(), "/cdn/5f02/60c9b691c5de0b1b5ad72be8fc82bfd0f8b3108b.jpg");
+		assertEquals(songEntry.getMetaData().getDirectDownload(),
+				"/cdn/5f02/60c9b691c5de0b1b5ad72be8fc82bfd0f8b3108b.zip");
 
 		assertEquals(songEntry2.getMetaData().getKey(), "5f01");
 		assertEquals(songEntry2.getMetaData().getLevelAuthorName(), "HaiXuZ");
@@ -106,6 +121,9 @@ public class ParserTest {
 		assertEquals(songEntry2.getMetaData().getHeat(), 924.153f, 0f);
 		assertEquals(songEntry2.getMetaData().getRating(), 0.0f, 0f);
 		assertEquals(songEntry2.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5f01");
+		assertEquals(songEntry2.getMetaData().getCoverUrl(), "/cdn/5f01/9e40c0b043c28c9caf9f53462f6811ab69448eb2.jpg");
+		assertEquals(songEntry2.getMetaData().getDirectDownload(),
+				"/cdn/5f01/9e40c0b043c28c9caf9f53462f6811ab69448eb2.zip");
 
 		assertEquals(songEntry3.getMetaData().getKey(), "5f00");
 		assertEquals(songEntry3.getMetaData().getLevelAuthorName(), "Pug");
@@ -118,6 +136,9 @@ public class ParserTest {
 		assertEquals(songEntry3.getMetaData().getHeat(), 924.11237f, 0f);
 		assertEquals(songEntry3.getMetaData().getRating(), 0.0f, 0f);
 		assertEquals(songEntry3.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5f00");
+		assertEquals(songEntry3.getMetaData().getCoverUrl(), "/cdn/5f00/839245d64719d018e40e2f11654b7c49230ca126.jpg");
+		assertEquals(songEntry3.getMetaData().getDirectDownload(),
+				"/cdn/5f00/839245d64719d018e40e2f11654b7c49230ca126.zip");
 	}
 
 	@Test
@@ -139,5 +160,8 @@ public class ParserTest {
 		assertEquals(songEntry.getMetaData().getHeat(), 879.7282f, 0f);
 		assertEquals(songEntry.getMetaData().getRating(), 0.41666666f, 0f);
 		assertEquals(songEntry.getMetaData().getDownloadURL(), "https://beatsaver.com/api/download/key/5a43");
+		assertEquals(songEntry.getMetaData().getCoverUrl(), "/cdn/5a43/40093b4bf1e79fe72e63766901affa9ebfbfb8fb.jpg");
+		assertEquals(songEntry.getMetaData().getDirectDownload(),
+				"/cdn/5a43/40093b4bf1e79fe72e63766901affa9ebfbfb8fb.zip");
 	}
 }

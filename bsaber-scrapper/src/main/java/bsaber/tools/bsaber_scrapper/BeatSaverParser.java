@@ -31,6 +31,8 @@ public class BeatSaverParser {
 	private static final String RATING = "rating";
 	private static final String HEAT = "heat";
 	private static final String DIFFICULTIES = "difficulties";
+	private static final String COVER_URL = "coverURL";
+	private static final String DIRECT_DOWNLOAD = "directDownload";
 	// Exclude
 	private static final String CHARACTERISTICS = "characteristics";
 
@@ -69,7 +71,6 @@ public class BeatSaverParser {
 					aMetaData = parse(jsonElement, aMetaData);
 				}
 			} else {
-
 				JsonObject jsonObject = (JsonObject) aJsonElement;
 
 				for (Entry<String, JsonElement> entry : jsonObject.entrySet()) {
@@ -99,6 +100,10 @@ public class BeatSaverParser {
 							aMetaData.setRating(value.getAsFloat());
 						} else if (HEAT.equals(key)) {
 							aMetaData.setHeat(value.getAsFloat());
+						} else if (DIRECT_DOWNLOAD.equals(key)) {
+							aMetaData.setDirectDownload(value.getAsString());
+						} else if (COVER_URL.equals(key)) {
+							aMetaData.setCoverUrl(value.getAsString());
 						} else if (DIFFICULTIES.equals(key)) {
 							JsonObject difficulties = value.getAsJsonObject();
 							for (Entry<String, JsonElement> difficultEntry : difficulties.entrySet()) {
