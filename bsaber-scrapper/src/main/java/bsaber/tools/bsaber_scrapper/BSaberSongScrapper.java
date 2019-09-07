@@ -9,6 +9,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
+import bsaber.tools.parser.BSaberParser;
+
 public class BSaberSongScrapper extends BaseSongScrapper {
 	private static final Logger cvLogger = LogManager.getLogger(BSaberSongScrapper.class);
 

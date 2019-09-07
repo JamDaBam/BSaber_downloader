@@ -1,4 +1,4 @@
-package bsaber.tools.bsaber_scrapper;
+package bsaber.tools.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,6 +8,11 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import bsaber.tools.bsaber_scrapper.Constants;
+import bsaber.tools.bsaber_scrapper.SongEntry;
+import bsaber.tools.bsaber_scrapper.SongMetaData;
+import bsaber.tools.bsaber_scrapper.Tools;
 
 public class BSaberParser {
 	private static final Logger cvLogger = LogManager.getLogger(BSaberParser.class);

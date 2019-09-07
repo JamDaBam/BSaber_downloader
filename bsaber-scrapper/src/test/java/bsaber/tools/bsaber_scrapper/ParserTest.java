@@ -12,6 +12,9 @@ import org.jsoup.select.Elements;
 import org.junit.Before;
 import org.junit.Test;
 
+import bsaber.tools.parser.BSaberParser;
+import bsaber.tools.parser.BeatSaverParser;
+
 public class ParserTest {
 	@Before
 	public void initLog4j() {

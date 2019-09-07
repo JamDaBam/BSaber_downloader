@@ -7,6 +7,8 @@ import java.net.URL;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import bsaber.tools.parser.BeatSaverParser;
+
 public class BeatSaverSongScrapper extends BaseSongScrapper {
 	private static final Logger cvLogger = LogManager.getLogger(BeatSaverSongScrapper.class);
 
